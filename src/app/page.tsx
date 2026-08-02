@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Camera, Heart, CheckCircle2, Copy, CreditCard, MessageCircle, Mail, MapPin } from "lucide-react";
 import Image from "next/image";
+import { QRCodeSVG } from 'qrcode.react';
 
 // Meta dados
 const TOTAL_VALUE = 38307.50;
@@ -107,6 +108,11 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [collected, setCollected] = useState(0);
+  
+  // States para o Pix Dinâmico
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [pixPayload, setPixPayload] = useState<string>("00020126560014BR.GOV.BCB.PIX0134comunidadegetsemani30@gmail.com5204000053039865802BR5923AD COMUNIDADE GETSEMANI6009SAO PAULO62150511CAMPANHASOM6304"); // Um payload genérico válido ajuda, ou podemos deixar vazio e gerar na hora.
+  const [isLoadingPix, setIsLoadingPix] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -119,9 +125,31 @@ export default function Home() {
   const PROGRESS_PERCENTAGE = (collected / MONTHLY_INSTALLMENT) * 100;
 
   const handleCopyPix = () => {
-    navigator.clipboard.writeText("comunidadegetsemani30@gmail.com");
+    // Se tiver payload gerado, copia ele. Se não, copia o email puro.
+    const textToCopy = selectedAmount && pixPayload ? pixPayload : "comunidadegetsemani30@gmail.com";
+    navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSelectAmount = async (amount: number) => {
+    setSelectedAmount(amount);
+    setIsLoadingPix(true);
+    try {
+      const res = await fetch('/api/pix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount })
+      });
+      const data = await res.json();
+      if (data.payload) {
+        setPixPayload(data.payload);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingPix(false);
+    }
   };
 
   const whatsappMessage = encodeURIComponent("Olá, vim através do site de contribuição e gostaria de tirar uma dúvida!");
@@ -217,12 +245,24 @@ export default function Home() {
             whileHover={{ y: -5 }}
             className="glass-card p-6 lg:col-span-2 flex flex-col items-center justify-center border-primary/30 bg-black/60 shadow-2xl"
           >
-            <div className="w-48 h-48 bg-white p-3 rounded-full flex items-center justify-center mb-6 relative overflow-hidden border-2 border-white/10">
-              <Image src="/images/perfil vetor preto pnng.jpg" alt="QR Code" fill className="object-cover opacity-30" />
-              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[1px] z-10">
-                 <span className="text-white text-xs font-bold px-4 py-2 bg-primary/90 rounded-full shadow-lg">QR Code Pix</span>
-              </div>
+            <div className="w-48 h-48 bg-white p-3 rounded-2xl flex items-center justify-center mb-4 relative overflow-hidden border-2 border-white/10">
+              {isLoadingPix ? (
+                <div className="animate-pulse text-gray-400 text-sm font-medium">Gerando QR Code...</div>
+              ) : (
+                <QRCodeSVG 
+                  value={selectedAmount && pixPayload ? pixPayload : "00020126560014BR.GOV.BCB.PIX0134comunidadegetsemani30@gmail.com5204000053039865802BR5923AD COMUNIDADE GETSEMANI6009SAO PAULO62150511CAMPANHASOM6304A67B"} 
+                  size={160} 
+                  level="M" 
+                  includeMargin={false}
+                />
+              )}
             </div>
+
+            {selectedAmount && (
+              <div className="text-yellow-500 font-bold mb-4 text-lg">
+                Pix no valor de R$ {selectedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </div>
+            )}
 
             <button 
               onClick={handleCopyPix}
@@ -239,19 +279,24 @@ export default function Home() {
 
           {/* Quick Values & Extra Info */}
           <div className="flex flex-col justify-between gap-6 lg:col-span-3">
-             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-4">
-                {[20, 50, 100, 200].map((val) => (
-                  <motion.button
-                    key={val}
-                    whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.1)' }}
-                    whileTap={{ scale: 0.97 }}
-                    className="glass-card p-5 flex flex-col items-center justify-center border border-white/10 hover:border-primary/60 transition-all bg-white/5"
-                  >
-                    <span className="text-sm text-gray-400 mb-1">Contribuir com</span>
-                    <span className="text-3xl font-extrabold text-white">R$ {val}</span>
-                  </motion.button>
-                ))}
-             </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 gap-4">
+                 {[20, 50, 100, 200].map((val) => (
+                   <motion.button
+                     key={val}
+                     onClick={() => handleSelectAmount(val)}
+                     whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                     whileTap={{ scale: 0.97 }}
+                     className={`glass-card p-5 flex flex-col items-center justify-center border transition-all ${
+                       selectedAmount === val 
+                         ? 'border-yellow-500 bg-yellow-500/10 shadow-[0_0_15px_rgba(234,179,8,0.2)]' 
+                         : 'border-white/10 hover:border-primary/60 bg-white/5'
+                     }`}
+                   >
+                     <span className={`text-sm mb-1 ${selectedAmount === val ? 'text-yellow-400' : 'text-gray-400'}`}>Contribuir com</span>
+                     <span className={`text-3xl font-extrabold ${selectedAmount === val ? 'text-yellow-500' : 'text-white'}`}>R$ {val}</span>
+                   </motion.button>
+                 ))}
+              </div>
 
              <div className="flex flex-col gap-3">
                 <motion.a 

@@ -27,9 +27,9 @@ async function registerWebhook() {
     // Alguns endpoints para testar em produção, geralmente /v1/webhooks ou /v2/webhooks
     const webhookUrl = 'https://doacoes-igreja.vercel.app/api/cora/webhook';
     
-    const webhookRes = await axios.post('https://matls-clients.api.cora.com.br/v1/webhooks', {
+    const webhookRes = await axios.post('https://matls-clients.api.cora.com.br/v2/webhooks', {
       url: webhookUrl,
-      events: ["invoice.paid"] // Algumas APIs pedem eventos, vamos tentar sem se der erro
+      events: ["CASH_IN.PIX.RECEIVED"] 
     }, {
       headers: { 
         'Authorization': `Bearer ${token}`,
