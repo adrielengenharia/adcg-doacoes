@@ -9,8 +9,6 @@ import Image from "next/image";
 const TOTAL_VALUE = 38307.50;
 const MONTHLY_INSTALLMENT = 1741.25;
 const CURRENT_MONTH = "Agosto";
-const CURRENT_COLLECTED = 850.00; // Simulação
-const PROGRESS_PERCENTAGE = (CURRENT_COLLECTED / MONTHLY_INSTALLMENT) * 100;
 
 // Todas as fotos do processo
 const fotosProcesso = [
@@ -108,10 +106,17 @@ const AnimatedBackground = () => {
 export default function Home() {
   const [copied, setCopied] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [collected, setCollected] = useState(0);
 
   useEffect(() => {
     setIsClient(true);
+    fetch('/api/progress')
+      .then(res => res.json())
+      .then(data => setCollected(data.collected))
+      .catch(err => console.error(err));
   }, []);
+
+  const PROGRESS_PERCENTAGE = (collected / MONTHLY_INSTALLMENT) * 100;
 
   const handleCopyPix = () => {
     navigator.clipboard.writeText("00020126580014br.gov.bcb.pix0136mock-chave-pix-da-igreja-aqui5204000053039865802BR5923AD COMUNIDADE GETSEMANI6009SAO PAULO62140510DjkEfwNqG763045E7A");
@@ -168,13 +173,13 @@ export default function Home() {
             <div>
               <span className="text-sm font-medium text-primary uppercase tracking-wider">Parcela de {CURRENT_MONTH}</span>
               <div className="text-3xl font-bold mt-1 text-white">
-                R$ {CURRENT_COLLECTED.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} 
+                R$ {collected.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} 
                 <span className="text-sm text-gray-400 font-normal ml-1">/ R$ {MONTHLY_INSTALLMENT.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
             <div className="text-right">
               <span className="text-xs text-gray-400 uppercase tracking-wider">Faltam</span>
-              <div className="text-xl font-semibold text-white">R$ {(MONTHLY_INSTALLMENT - CURRENT_COLLECTED).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+              <div className="text-xl font-semibold text-white">R$ {Math.max(0, MONTHLY_INSTALLMENT - collected).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
             </div>
           </div>
           

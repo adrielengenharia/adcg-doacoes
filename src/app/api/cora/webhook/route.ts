@@ -1,20 +1,29 @@
 import { NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
-    // Essa rota será chamada AUTOMATICAMENTE pela Cora quando um Pix for pago
-    console.log("Webhook Cora recebido!", body);
+    console.log("Webhook Cora recebido:", JSON.stringify(body));
 
-    // Na vida real:
-    // 1. Verificamos se o status é "PAID"
-    // 2. Pegamos o valor pago
-    // 3. Atualizamos o Vercel Postgres / Supabase somando o valor na parcela de "Agosto"
+    // A Cora manda o status e o valor. Normalmente no array event.data
+    // Vamos assumir um payload de notificação de Pix recebido
+    if (body?.type === 'CASH_IN.PIX.RECEIVED' && body?.data?.amount) {
+      const valorRecebido = Number(body.data.amount) / 100; // Valor geralmente vem em centavos
+      console.log(`Pix recebido no valor de R$ ${valorRecebido}`);
+      
+      // Atualizar o banco de dados
+      await sql`
+        UPDATE progress 
+        SET collected_amount = collected_amount + ${valorRecebido}
+        WHERE month = 'Agosto';
+      `;
+    }
     
     return NextResponse.json({ received: true });
 
   } catch (error) {
+    console.error("Erro no webhook:", error);
     return NextResponse.json({ error: "Erro processando webhook" }, { status: 500 });
   }
 }
