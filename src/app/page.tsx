@@ -119,7 +119,7 @@ export default function Home() {
   const PROGRESS_PERCENTAGE = (collected / MONTHLY_INSTALLMENT) * 100;
 
   const handleCopyPix = () => {
-    navigator.clipboard.writeText("00020126580014br.gov.bcb.pix0136mock-chave-pix-da-igreja-aqui5204000053039865802BR5923AD COMUNIDADE GETSEMANI6009SAO PAULO62140510DjkEfwNqG763045E7A");
+    navigator.clipboard.writeText("comunidadegetsemani30@gmail.com");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -226,10 +226,13 @@ export default function Home() {
 
             <button 
               onClick={handleCopyPix}
-              className="w-full py-4 px-4 bg-primary text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-yellow-500 transition-all shadow-lg active:scale-95"
+              className="w-full py-4 px-4 bg-primary text-black font-bold rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-yellow-500 transition-all shadow-lg active:scale-95"
             >
-              {copied ? <CheckCircle2 size={22} /> : <Copy size={22} />}
-              {copied ? "Chave Pix Copiada!" : "Copiar Chave Pix"}
+              <div className="flex items-center gap-2">
+                {copied ? <CheckCircle2 size={22} /> : <Copy size={22} />}
+                <span>{copied ? "Chave Copiada!" : "Copiar Chave Pix"}</span>
+              </div>
+              <span className="text-xs font-medium text-black/70">comunidadegetsemani30@gmail.com</span>
             </button>
             
           </motion.div>
